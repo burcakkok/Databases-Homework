@@ -39,7 +39,7 @@ join orders on order_items.order_id = orders.id
 where orders.order_reference = 'ORD006'; --10
 
 select customers.name, orders.order_reference, orders.order_date, products.product_name, suppliers.supplier_name 
-from products join order_items on products.id = order_items.order_id
+from products join order_items on products.id = order_items.product_id
 join orders on orders.id = order_items.order_id 
 join customers on customers.id = orders.customer_id
 join suppliers on products.supplier_id = suppliers.id; --11

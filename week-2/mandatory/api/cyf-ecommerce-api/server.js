@@ -1,13 +1,13 @@
 const express = require("express");
 const { Pool, Client } = require("pg");
 
-const PORT = 3000;
+const PORT = 3001;
 const app = express();
 
 const pool = new Pool({
   user: "burcak",
   host: "localhost",
-  database: "cyf_ecommerce",
+  database: "postgres",
   password: "",
   port: 5432,
 });
@@ -39,9 +39,8 @@ app.get("/products", function (req, res) {
   });
 });
 
-
 app.listen(PORT, function () {
-    console.log(
-      "Server is listening on port 3000 and connected to DB. Ready to accept requests!"
-    );
-  });
+  console.log(
+    "Server is listening on port 3001 and connected to DB. Ready to accept requests!"
+  );
+});
