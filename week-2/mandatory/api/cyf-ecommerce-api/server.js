@@ -13,7 +13,7 @@ const pool = new Pool({
 });
 
 app.get("/customers", function (req, res) {
-  pool.query("select * from customers", (error, response) => {
+  pool.query('select * from customers', (error, response) => {
     if (error) {
       console.log("Something is wrong" + error);
     }
@@ -21,8 +21,15 @@ app.get("/customers", function (req, res) {
   });
 });
 
+app.get('/customers', (req, res) => {
+  pool.query('select * from customers')
+      .then(response => res.json(response.rows))
+      .catch(error => console.log("Something went wrong " + error));
+});
+
+
 app.get("/suppliers", function (req, res) {
-  pool.query("select * from suppliers", (error, response) => {
+  pool.query('select supplier_name as name,country from suppliers', (error, response) => {
     if (error) {
       console.log("Something is wrong" + error);
     }
@@ -31,7 +38,7 @@ app.get("/suppliers", function (req, res) {
 });
 
 app.get("/products", function (req, res) {
-  pool.query("select * from products", (error, response) => {
+  pool.query('select p.product_name, p.unit_price, s.supplier_name from products p join suppliers s on s.id = p.supplier_id', (error, response) => {
     if (error) {
       console.log("Something is wrong" + error);
     }
