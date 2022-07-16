@@ -16,6 +16,8 @@ const pool = new Pool({
   port: 5432,
 });
 
+// DATABASE WEEK2 HOMEWORK
+
 app.get("/customers", function (req, res) {
   pool.query("select * from customers", (error, response) => {
     if (error) {
@@ -25,29 +27,33 @@ app.get("/customers", function (req, res) {
   });
 });
 
-// app.get('/customers', (req, res) => {
-//   pool.query('select * from customers')
-//       .then(response => res.json(response.rows))
-//       .catch(error => console.log("Something went wrong " + error));
-// });
+app.get("/customers", (req, res) => {
+  pool
+    .query("select * from customers")
+    .then((response) => res.json(response.rows))
+    .catch((error) => console.log("Something went wrong " + error));
+});
 
-// app.get("/suppliers", function (req, res) {
-//   pool.query('select supplier_name as name,country from suppliers', (error, response) => {
-//     if (error) {
-//       console.log("Something is wrong" + error);
-//     }
-//     res.json(response.rows);
-//   });
-// });
+app.get("/suppliers", function (req, res) {
+  pool.query("select * from suppliers", (error, response) => {
+    if (error) {
+      console.log("Something is wrong" + error);
+    }
+    res.json(response.rows);
+  });
+});
 
-// app.get("/products", function (req, res) {
-//   pool.query('select p.product_name, p.unit_price, s.supplier_name from products p join suppliers s on s.id = p.supplier_id', (error, response) => {
-//     if (error) {
-//       console.log("Something is wrong" + error);
-//     }
-//     res.json(response.rows);
-//   });
-// });
+app.get("/products", function (req, res) {
+  pool.query(
+    "select p.product_name, p.unit_price, s.supplier_name from products p join suppliers s on s.id = p.supplier_id",
+    (error, response) => {
+      if (error) {
+        console.log("Something is wrong" + error);
+      }
+      res.json(response.rows);
+    }
+  );
+});
 
 // DATABASE WEEK3 HOMEWORK
 // - If you don't have it already,
@@ -133,6 +139,34 @@ app.post("/customers", (req, res) => {
 // - Add a new POST endpoint `/products` to create a new product (with a product name, a price and a supplier id).
 // Check that the price is a positive integer and that the supplier ID exists in the database, otherwise return an error.
 
+app.post("/products", (req, res) => {
+  const productName = req.body.product_name;
+  const unitPrice = req.body.unit_price;
+  const supplierId = req.body.supplier_id;
+
+  pool
+    .query("select * from suppliers where id=$1", [supplierId])
+    .then((result) => {
+      if (result.rows.length === 0) {
+        return res.status(400).send("Supplier does not exists!");
+      } else if (
+        !Number.isInteger(JSON.parse(unitPrice)) ||
+        JSON.parse(unitPrice) <= 0
+      ) {
+        return res
+          .status(400)
+          .send("The unit price should be a positive integer.");
+      } else {
+        const query =
+          "Insert into products(product_name,unit_price,supplier_id) VALUES($1, $2, $3) ";
+        pool
+          .query(query, [productName, unitPrice, supplierId])
+          .then(() => res.send("New Product Created"))
+          .catch((e) => console.error(e));
+      }
+    });
+});
+
 // - Add a new POST endpoint `/customers/:customerId/orders` to create a new order (including an order date, and an order reference) for a customer.
 // Check that the customerId corresponds to an existing customer or return an error.
 
@@ -172,19 +206,17 @@ app.post("/customers/:customerId/orders", (req, res) => {
 // Especially, the following information should be returned: order references, order dates, product names, unit prices, suppliers and quantities.
 
 app.get("/customers/:customerId/orders", (req, res) => {
+  const getCustomerOrders =
+    "select o.order_reference, o.order_date, p.product_name, p.unit_price, s.supplier_name" +
+    "from orders o join order_items oi on o.id = oi.order_id" +
+    "join products p on p.id = oi.product_id" +
+    "join suppliers s on p.supplier_id = s.id" +
+    "where o.customer_id = $1";
 
-
-  const getCustomerOrders = "select o.order_reference, o.order_date, p.product_name, p.unit_price, s.supplier_name" + 
-  "from orders o join order_items oi on o.id = oi.order_id" + 
-  "join products p on p.id = oi.product_id" + 
-  "join suppliers s on p.supplier_id = s.id" + 
-  "where o.customer_id = $1"
-
-
-  pool.query(getCustomerOrders, [customerId])
-      .then(result => res.json(result.rows))
-      .catch((error) => console.error("Something is wrong" + error));
-
+  pool
+    .query(getCustomerOrders, [customerId])
+    .then((result) => res.json(result.rows))
+    .catch((error) => console.error("Something is wrong" + error));
 });
 
 app.listen(PORT, function () {
