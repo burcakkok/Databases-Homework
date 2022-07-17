@@ -198,9 +198,53 @@ app.post("/customers/:customerId/orders", (req, res) => {
 
 // - Add a new PUT endpoint `/customers/:customerId` to update an existing customer (name, address, city and country).
 
+app.put("/customers/:customerId", function (req, res) {
+  const customerId = req.params.customerId;
+  const { name, address, city, country } = req.body;
+
+  pool
+    .query(
+      "UPDATE customers SET name=$1, address=$2, city=$3, country=$4 WHERE id=$5",
+      [name, address, city, country, customerId]
+    )
+    .then(() => res.send(`Customer ${customerId} updated!`))
+    .catch((e) => console.error(e));
+});
+
 // - Add a new DELETE endpoint `/orders/:orderId` to delete an existing order along all the associated order items.
 
+app.delete("/orders/:orderId", function (req, res) {
+  const orderId = req.params.orderId;
+  pool.query("DELETE FROM order_items WHERE order_id=$1", [orderId]).then(() =>
+    pool
+      .query("DELETE FROM orders WHERE id=$1", [orderId])
+      .then(() =>
+        res.send(
+          `Order ${orderId} deleted along all the associated order items!`
+        )
+      )
+      .catch((e) => console.error(e))
+  );
+});
+
 // - Add a new DELETE endpoint `/customers/:customerId` to delete an existing customer only if this customer doesn't have orders.
+
+app.delete("/customers/:customerId", function (req, res) {
+  const customerId = req.params.customerId;
+  pool
+    .query("SELECT * FROM orders WHERE customer_id=$1", [customerId])
+    .then((result) => {
+      console.log(result.rows);
+      if (result.rows.length > 0) {
+        return res.status(400).send("This customer has orders!");
+      } else {
+        pool
+          .query("DELETE FROM customers WHERE id=$1", [customerId])
+          .then(() => res.send(`Customer ${customerId} deleted!`))
+          .catch((e) => console.error(e));
+      }
+    });
+});
 
 // - Add a new GET endpoint `/customers/:customerId/orders` to load all the orders along the items in the orders of a specific customer.
 // Especially, the following information should be returned: order references, order dates, product names, unit prices, suppliers and quantities.
